@@ -2,15 +2,9 @@
 
 import { ArrowRight, Check, FilePlus2, Loader2, Paperclip, ShieldCheck, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  useAccount,
-  useReadContract,
-  useSignMessage,
-  useWaitForTransactionReceipt,
-  useWriteContract,
-} from "wagmi";
+import { useReadContract } from "wagmi";
 
-import { explorerTx, monadTestnet } from "@/lib/chain";
+import { explorerTx } from "@/lib/chain";
 import {
   dateToServiceDay,
   isCompleteVin,
@@ -25,12 +19,14 @@ import { cn, formatKm } from "@/lib/utils";
 
 import { SectionHeading } from "./section-heading";
 import { useLocale, useT } from "./preferences";
-import { WalletButton } from "./wallet-button";
+import { useRegistryWrite, useUstaSession } from "./usta-session";
+import { AddressToShare, PhoneBar, SignInOptions } from "./usta-signin";
 
 export function ReportForm() {
   const t = useT();
   const locale = useLocale();
-  const { address, isConnected, chainId } = useAccount();
+  const session = useUstaSession();
+  const { address } = session;
 
   const [vin, setVin] = useState("");
   const [mileage, setMileage] = useState("");
@@ -59,15 +55,11 @@ export function ReportForm() {
   const uploadPass = useRef<{ address: string; expires: number; signature: string } | null>(
     null,
   );
-  const { signMessageAsync } = useSignMessage();
   /** A code from the upload route, or "failed"; shown through the dictionary. */
   const [uploadError, setUploadError] = useState<keyof typeof t.upload | null>(null);
 
-  /** Milliseconds between the signature landing and the receipt arriving. */
-  const [confirmMs, setConfirmMs] = useState<number | null>(null);
-  const sentAt = useRef<number | null>(null);
 
-  const onRightNetwork = isConnected && chainId === monadTestnet.id;
+  const onRightNetwork = session.ready;
 
   // Is this wallet allowed to write history at all?
   const { data: isService, isLoading: checkingService } = useReadContract({
@@ -85,20 +77,20 @@ export function ReportForm() {
     query: { enabled: isCompleteVin(vin) && onRightNetwork },
   }) as { data: VehicleSummary | undefined; refetch: () => void };
 
-  const { writeContract, data: hash, isPending, error: writeError, reset } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  // Times the network, not the human: the clock starts once the transaction is out.
+  const {
+    write,
+    hash,
+    isPending,
+    isConfirming,
+    isSuccess,
+    error: writeError,
+    reset,
+    confirmMs,
+  } = useRegistryWrite();
 
-  // Time the network, not the human: start the clock once the wallet has signed.
   useEffect(() => {
-    if (hash && sentAt.current === null) sentAt.current = Date.now();
-  }, [hash]);
-
-  useEffect(() => {
-    if (isSuccess && sentAt.current !== null) {
-      setConfirmMs(Date.now() - sentAt.current);
-      sentAt.current = null;
-      refetchSummary();
-    }
+    if (isSuccess) refetchSummary();
   }, [isSuccess, refetchSummary]);
 
   const mileageNumber = mileage === "" ? null : Number(mileage);
@@ -159,7 +151,7 @@ export function ReportForm() {
     const expires = now + UPLOAD_PASS_SECONDS;
     setSigning(true);
     try {
-      const signature = await signMessageAsync({ message: uploadMessage(address!, expires) });
+      const signature = await session.signMessage(uploadMessage(address!, expires));
       uploadPass.current = { address: address!, expires, signature };
       return uploadPass.current;
     } finally {
@@ -208,44 +200,33 @@ export function ReportForm() {
 
   function submit() {
     if (!canSubmit) return;
-    setConfirmMs(null);
-    sentAt.current = null;
     const day = dateToServiceDay(new Date(servicedOn));
 
     if (registering) {
-      writeContract({
-        ...registry,
-        functionName: "registerVehicle",
-        args: [
-          normalizeVin(vin),
-          mileageNumber!,
-          day,
-          // Zero address keeps the token at the garage until the owner claims it.
-          (vehicleOwner.trim() || "0x0000000000000000000000000000000000000000") as `0x${string}`,
-          attachment?.cid ?? "",
-          note.trim() || t.form.firstEntryNote,
-        ],
-      });
-      return;
-    }
-
-    writeContract({
-      ...registry,
-      functionName: "addRecordByVin",
-      args: [
+      void write("registerVehicle", [
         normalizeVin(vin),
         mileageNumber!,
         day,
-        typeValue,
+        // Zero address keeps the token at the garage until the owner claims it.
+        (vehicleOwner.trim() || "0x0000000000000000000000000000000000000000") as `0x${string}`,
         attachment?.cid ?? "",
-        note.trim(),
-      ],
-    });
+        note.trim() || t.form.firstEntryNote,
+      ]);
+      return;
+    }
+
+    void write("addRecordByVin", [
+      normalizeVin(vin),
+      mileageNumber!,
+      day,
+      typeValue,
+      attachment?.cid ?? "",
+      note.trim(),
+    ]);
   }
 
   function startOver() {
     reset();
-    setConfirmMs(null);
     setMileage("");
     setNote("");
     setServicedOn(todayIso);
@@ -256,10 +237,10 @@ export function ReportForm() {
 
   // --- states that replace the whole form -----------------------------------
 
-  if (!isConnected || !onRightNetwork) {
+  if (!onRightNetwork) {
     return (
       <Notice label={t.form.connectLabel} title={t.form.connectTitle} body={t.form.connectBody}>
-        <WalletButton className="w-full sm:w-auto" />
+        <SignInOptions />
       </Notice>
     );
   }
@@ -283,9 +264,12 @@ export function ReportForm() {
         title={t.form.refusedTitle}
         body={t.form.refusedBody}
       >
-        <code className="numeric block break-all border-[1.5px] border-ink bg-paper-2 px-3 py-2 text-[13px] text-ink">
-          {address}
-        </code>
+        <AddressToShare address={address!} />
+        {session.mode === "phone" && (
+          <button type="button" onClick={session.logout} className="btn btn-ghost mt-4">
+            {t.form.signOut}
+          </button>
+        )}
       </Notice>
     );
   }
@@ -293,6 +277,7 @@ export function ReportForm() {
   if (isSuccess) {
     return (
       <div>
+        <PhoneBar />
         <div className="flex items-center gap-2.5">
           <span className="flex size-7 items-center justify-center bg-green text-paper">
             <Check className="size-4" strokeWidth={3} />
@@ -362,6 +347,7 @@ export function ReportForm() {
 
   return (
     <div className="space-y-10">
+      <PhoneBar />
       {/* 1. The vehicle */}
       <section>
         <SectionHeading n={1}>{t.form.sectionVehicle}</SectionHeading>

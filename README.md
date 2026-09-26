@@ -129,9 +129,17 @@ Mobil odaklı: tek kolon, büyük dokunma alanları, tek buton. Sicilde olmayan 
   <img src="docs/screenshots/report.png" alt="Usta paneli" width="300" />
 </div>
 
-Usta paneline telefondan **MetaMask uygulamasının kendi tarayıcısıyla** girilir.
-Cüzdanı olmayan bir tarayıcıda "Cüzdan Bağla" bunu söyler ve sayfayı MetaMask
-uygulamasında açan bağlantıyı verir.
+**Usta blokzinciri görmüyor.** Usta panele **e-postasıyla** girer: arka planda
+Privy onun için bir cüzdan, üstünde bir akıllı hesap açar; kayıt girmenin ve
+kazanç çekmenin işlem ücretini **Pimlico** üzerinden platform öder. Ustanın ne
+MetaMask'e ne MON'a ihtiyacı var. Paneldeki **Hesabım** kutusu hesap adresini,
+hesaptaki parayı ve çekilebilir rapor gelirini gösterir; bir çekimden sonra
+"… MON hesabınıza geçti ✓" ve işlem bağlantısı çıkar. Kontrat değişmedi: akıllı
+hesap, yönetici panelinden yetki verilen ve payı alan adres oluyor.
+
+Kendi cüzdanını kullanmak isteyen usta MetaMask ile de girebilir; telefonda
+MetaMask uygulamasının tarayıcısıyla. Cüzdanı olmayan bir tarayıcıda "Cüzdan
+Bağla" bunu söyler ve sayfayı MetaMask uygulamasında açan bağlantıyı verir.
 
 ### Yönetici paneli
 
@@ -363,7 +371,7 @@ Rapor üç durumda ücretsiz: aracın NFT sahibi kendi aracını, onaylı servis
 | Zincir | Monad Testnet |
 | Kontrat | Solidity 0.8.28, OpenZeppelin 5, Hardhat 3 + viem, `node:test` |
 | Arayüz | Next.js 16 (App Router), React 19, Tailwind CSS 4, TypeScript |
-| Cüzdan | wagmi 3 + viem, MetaMask (injected) |
+| Cüzdan | wagmi 3 + viem, MetaMask; usta için Privy (e-posta) + Kernel akıllı hesap + Pimlico (işlem ücreti sponsorluğu, ERC-4337) |
 | Depolama | IPFS (Pinata V3) |
 | Tasarım | Archivo + JetBrains Mono; teknik bilgi föyü (datasheet) dili; TR/EN; açık/koyu tema |
 
@@ -431,6 +439,9 @@ npm run dev                    # http://localhost:3000
 |---|---|---|
 | `PINATA_JWT` | Fotoğraf için | `org:files:write` yetkili Pinata anahtarı. Yoksa uygulama çalışır, yalnızca fotoğraf yüklenmez |
 | `ADMIN_USERNAME` / `ADMIN_PASSWORD` | Hayır | Yönetici girişi. Varsayılan `admin` / `0000` |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | E-postayla usta girişi için | [Privy](https://dashboard.privy.io) uygulama kimliği. Yayın adresini Privy'de "allowed origins"e ekleyin |
+| `NEXT_PUBLIC_PIMLICO_BUNDLER_URL` | E-postayla usta girişi için | [Pimlico](https://dashboard.pimlico.io) Monad Testnet adresi: `https://api.pimlico.io/v2/10143/rpc?apikey=...`. İşlem ücretlerini bu hesap öder |
+| `NEXT_PUBLIC_PRIVY_SMS` | Hayır | `true` ise SMS ile giriş de sunulur (önce Privy panelinde açılmalı) |
 | `MONAD_RPC_URL` | Hayır | Sunucunun okumaları için daha yüksek limitli özel RPC |
 | `NEXT_PUBLIC_SITE_URL` | Hayır | Paylaşılan linklerdeki önizleme görseli için sitenin adresi; Vercel'de otomatik |
 
@@ -473,8 +484,9 @@ Hepsi `contracts/` içinde çalışır.
 ### Vercel'e yayınlama
 
 1. Depoyu Vercel'e bağlayın, **Root Directory** olarak `web` seçin.
-2. Ortam değişkenlerine `PINATA_JWT` ekleyin (isteğe bağlı olarak
-   `ADMIN_PASSWORD` ve `MONAD_RPC_URL`).
+2. Ortam değişkenlerine `PINATA_JWT`, `NEXT_PUBLIC_PRIVY_APP_ID` ve
+   `NEXT_PUBLIC_PIMLICO_BUNDLER_URL` ekleyin (isteğe bağlı: `ADMIN_PASSWORD`,
+   `MONAD_RPC_URL`). Privy panelinde yayın adresini izinli alan adlarına ekleyin.
 3. Deploy. Kontrat adresi `web/src/lib/contract/` içinde, ayrıca ayar gerekmez.
 
 ## 15. Testler ve doğrulama
@@ -532,7 +544,8 @@ Zincir her şeyi çözmüyor. Sistemin sınırları:
 - Araç sahipliği devri (ERC-721 zaten destekliyor, arayüzü yok)
 - Sigorta ve ekspertiz şirketleri için toplu sorgulama API'si
 - Yetkilendirmenin çoklu imzaya taşınması
-- Mobil cüzdanlar için WalletConnect
+- SMS ile usta girişi ve kazancın TL olarak (lisanslı ödeme kuruluşu üzerinden) ödenmesi
+- Onaylanmış her kayıt için ustaya anında ödül
 
 ---
 

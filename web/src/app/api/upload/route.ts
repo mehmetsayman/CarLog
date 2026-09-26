@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { isAddress, recoverMessageAddress } from "viem";
+import { isAddress } from "viem";
 
 import type { UploadErrorCode } from "@/lib/i18n/dictionaries";
-import { isApprovedGarage } from "@/lib/server";
+import { isApprovedGarage, verifyAddressSignature } from "@/lib/server";
 import { UPLOAD_HEADERS, UPLOAD_PASS_SECONDS, uploadMessage } from "@/lib/upload-auth";
 
 /**
@@ -52,12 +52,13 @@ async function isAuthorized(request: Request) {
   }
 
   try {
-    const signer = await recoverMessageAddress({
-      message: uploadMessage(address, expires),
-      signature: signature as `0x${string}`,
-    });
-    if (signer.toLowerCase() !== address.toLowerCase()) return false;
-    return await isApprovedGarage(signer);
+    const valid = await verifyAddressSignature(
+      address,
+      uploadMessage(address, expires),
+      signature as `0x${string}`,
+    );
+    if (!valid) return false;
+    return await isApprovedGarage(address);
   } catch (error) {
     console.error("upload auth check failed", error instanceof Error ? error.message : error);
     return false;

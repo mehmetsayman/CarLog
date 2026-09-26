@@ -1,6 +1,7 @@
 import { DocHead, PageFoot, TopBand } from "@/components/datasheet";
 import { EarningsCard } from "@/components/earnings-card";
 import { ReportForm } from "@/components/report-form";
+import { UstaSessionProvider } from "@/components/usta-session";
 import { getDictionary } from "@/lib/i18n/server";
 
 export async function generateMetadata() {
@@ -31,8 +32,10 @@ export default async function ReportPage() {
           </h1>
           <p className="mb-10 mt-4 text-[16px] text-ink-2">{t.garage.intro}</p>
 
-          <EarningsCard />
-          <ReportForm />
+          <UstaSessionProvider>
+            <EarningsCard />
+            <ReportForm />
+          </UstaSessionProvider>
         </div>
       </main>
 

@@ -134,3 +134,16 @@ export function isApprovedGarage(address: `0x${string}`) {
     ),
   );
 }
+
+/**
+ * Whether `signature` is `address` signing `message`. Works for plain wallets and
+ * for smart accounts (ERC-1271, and ERC-6492 before the account is deployed),
+ * which is how a garage signed in by phone signs.
+ */
+export async function verifyAddressSignature(
+  address: `0x${string}`,
+  message: string,
+  signature: `0x${string}`,
+) {
+  return publicClient.verifyMessage({ address, message, signature });
+}
