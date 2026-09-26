@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+cache/
+artifacts/
+types/
+.next/
+out/
+*.log
+
+# Local demo wiring: which of your wallets plays which role.
+contracts/deployments/roles.*.json
+
+# Local editor and design tooling (Impeccable skill, agent settings). Not part
+# of the product, and it re-installs with `npx impeccable install`.
+.claude/

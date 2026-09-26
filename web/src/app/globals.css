@@ -1,0 +1,465 @@
+@import "tailwindcss";
+
+/*
+ * CarLog, set as a datasheet.
+ *
+ * A vehicle's service history is a technical document about a physical object,
+ * and the most trusted technical documents people read are component datasheets:
+ * a part number, a revision, numbered sections, captioned figures and tables,
+ * nothing decorative. So that is the register. Paper-white ground, near-black
+ * ink, one red that marks what matters, hairline rules instead of cards, and not
+ * a single rounded corner - a datasheet does not have them.
+ *
+ * Archivo carries the whole voice through its width axis: condensed and heavy
+ * for headlines, normal width for reading. JetBrains Mono sets anything that is
+ * data - a VIN, a mileage, an address - so digits line up in a column.
+ */
+@theme {
+  /* Paper. */
+  --color-paper: #ffffff;
+  --color-paper-2: #f4f4f1;
+  --color-band: #e6e6e1;
+
+  /* Ink, from full weight down to the quietest text that still clears AA. */
+  --color-ink: #121212;
+  --color-ink-2: #3d3d3a;
+  --color-ink-3: #6a6a64;
+
+  /* Rules. A full rule is ink; a hairline separates rows. */
+  --color-hair: #c9c9c2;
+
+  /* The one accent. It marks section numbers, the figure that matters, and
+     anything the chain refused. */
+  --color-red: #c8102e;
+  --color-red-ink: #a50d25;
+  --color-red-wash: #fbe9ec;
+
+  /* The band across the top and the button hover. Unlike the accent it does not
+     lighten in the dark theme: white text has to keep reading on it. */
+  --color-brand: #c8102e;
+
+  /* Tyres, the shadow inside a wheel arch, and the closing band. */
+  --color-tire: #121212;
+  --color-shade: #2a2a28;
+  --color-close: #121212;
+
+  /* Verdicts, each tuned to read on white. */
+  --color-green: #1d7a46;
+  --color-amber: #9a6700;
+
+  --font-sans: var(--font-sans-face), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+html {
+  color-scheme: light;
+}
+
+/*
+ * The dark theme: the same sheet, printed in reverse. Every colour above has a
+ * counterpart here, so components never ask which theme they are in.
+ *
+ * It applies when the visitor chose it, or when they chose nothing and their
+ * system is dark. The two blocks are identical on purpose.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: #111110;
+  --color-paper-2: #1a1a18;
+  --color-band: #262623;
+  --color-ink: #f0f0ec;
+  --color-ink-2: #c2c2bb;
+  --color-ink-3: #8e8e87;
+  --color-hair: #393935;
+  --color-red: #ec4a62;
+  --color-red-ink: #ff8a9b;
+  --color-red-wash: #2d1419;
+  --color-green: #4cc387;
+  --color-amber: #e0ad4a;
+  --color-tire: #262623;
+  --color-shade: #050505;
+  --color-close: #1d1d1b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-paper: #111110;
+    --color-paper-2: #1a1a18;
+    --color-band: #262623;
+    --color-ink: #f0f0ec;
+    --color-ink-2: #c2c2bb;
+    --color-ink-3: #8e8e87;
+    --color-hair: #393935;
+    --color-red: #ec4a62;
+    --color-red-ink: #ff8a9b;
+    --color-red-wash: #2d1419;
+    --color-green: #4cc387;
+    --color-amber: #e0ad4a;
+    --color-tire: #262623;
+    --color-shade: #050505;
+    --color-close: #1d1d1b;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  font-variation-settings: "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  /* The page column. */
+  .wrap {
+    max-width: 1240px;
+    margin-inline: auto;
+    padding-inline: clamp(20px, 3.2vw, 40px);
+  }
+
+  /* --- type ------------------------------------------------------------- */
+
+  /* The headline voice: heavy, condensed, tight. */
+  .display {
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    font-variation-settings: "wdth" 80;
+    text-wrap: balance;
+  }
+
+  .display em {
+    font-style: normal;
+    color: var(--color-red);
+  }
+
+  /* The part number in the top-right of a datasheet. */
+  .partno {
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+    font-variation-settings: "wdth" 72;
+  }
+
+  /* "1  Features" - a numbered section heading. */
+  .sec-h {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5em;
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.2;
+    margin: 0 0 12px;
+  }
+
+  .sec-h .n {
+    color: var(--color-red);
+    font-variation-settings: "wdth" 90;
+  }
+
+  /* Data: VINs, mileages, addresses, hashes. */
+  .numeric {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A small tracked caps label, as over a figure or a table column. */
+  .label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-ink-2);
+  }
+
+  /* "Figure 1." / "Table 1." */
+  .cap-n {
+    font-weight: 700;
+    color: var(--color-red);
+  }
+
+  /* --- controls --------------------------------------------------------- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font: 600 15px/1 var(--font-sans);
+    padding: 13px 18px;
+    border: 1.5px solid var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background 0.12s,
+      border-color 0.12s,
+      color 0.12s;
+  }
+
+  .btn:hover:not(:disabled) {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: #fff;
+  }
+
+  .btn:disabled {
+    cursor: not-allowed;
+    background: var(--color-band);
+    border-color: var(--color-band);
+    color: var(--color-ink-3);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--color-ink);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  /* A white button sitting on the red top band. */
+  .btn-on-red {
+    background: #fff;
+    border-color: #fff;
+    color: var(--color-brand);
+    padding: 9px 14px;
+    font-size: 14px;
+  }
+
+  .btn-on-red:hover:not(:disabled) {
+    background: #121212;
+    border-color: #121212;
+    color: #fff;
+  }
+
+  /* A form field: a box drawn with a rule, not a filled pill. */
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1.5px solid var(--color-ink);
+    background: var(--color-paper);
+    padding: 12px 14px;
+  }
+
+  .field:focus-within {
+    outline: 2px solid var(--color-red);
+    outline-offset: 2px;
+  }
+
+  .field input,
+  .field select {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--color-ink);
+    font: inherit;
+  }
+
+  .field input::placeholder {
+    color: var(--color-ink-3);
+  }
+
+  .field[data-error="true"] {
+    border-color: var(--color-red);
+    background: var(--color-red-wash);
+  }
+
+  /* "PRODUCT PREVIEW" - the outlined red tag at the head of a document. */
+  .tag {
+    display: inline-block;
+    border: 1.5px solid var(--color-red);
+    color: var(--color-red);
+    padding: 3px 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* --- figures and tables ---------------------------------------------- */
+
+  .fig-frame {
+    border: 1.5px solid var(--color-ink);
+    background: var(--color-paper);
+    position: relative;
+  }
+
+  .fig-cap {
+    font-size: 13px;
+    color: var(--color-ink-2);
+    margin-top: 10px;
+    text-align: center;
+  }
+
+  .tbl-wrap {
+    overflow-x: auto;
+    border-top: 1.5px solid var(--color-ink);
+    border-bottom: 1.5px solid var(--color-ink);
+  }
+
+  table.ds {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  table.ds caption {
+    caption-side: top;
+    text-align: left;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 0 0 8px;
+  }
+
+  table.ds th {
+    background: var(--color-band);
+    font-weight: 700;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--color-ink);
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  table.ds td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--color-hair);
+    vertical-align: top;
+    color: var(--color-ink-2);
+  }
+
+  table.ds tr:last-child td {
+    border-bottom: 0;
+  }
+
+  /* A row that matters - an accident, the pin under discussion. */
+  table.ds tbody tr.hl td {
+    background: var(--color-red-wash);
+    color: var(--color-ink);
+  }
+
+  /* --- lists ------------------------------------------------------------ */
+
+  /* Square bullets, as on a datasheet's feature list. */
+  .features {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .features li {
+    position: relative;
+    padding: 5px 0 5px 22px;
+    font-size: 15.5px;
+    line-height: 1.45;
+    color: var(--color-ink-2);
+  }
+
+  .features li::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 13px;
+    width: 7px;
+    height: 7px;
+    background: var(--color-ink);
+  }
+
+  .features li b {
+    color: var(--color-ink);
+    font-weight: 650;
+  }
+
+  /* A short rule for a bullet, for secondary lists. */
+  .dashes {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .dashes li {
+    position: relative;
+    padding: 3px 0 3px 14px;
+    font-size: 15px;
+    color: var(--color-ink-2);
+  }
+
+  .dashes li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 12px;
+    width: 6px;
+    height: 1.5px;
+    background: var(--color-ink);
+  }
+
+  /* The running foot of a datasheet page. */
+  .pagefoot {
+    border-top: 1.5px solid var(--color-ink);
+    margin-top: 8px;
+  }
+
+  .pagefoot .wrap {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: 12px;
+    color: var(--color-ink-3);
+  }
+
+  .pagefoot b {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
+  /* The dark band a datasheet page closes on. */
+  .close-band {
+    background: var(--color-close);
+    color: #f2f2ee;
+  }
+
+  .close-band .display em {
+    color: #ff4d63;
+  }
+}
+
+/* Keyboard focus is always visible, in the accent. */
+:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+/* Chrome repaints autofilled inputs; keep them on paper. */
+input:-webkit-autofill,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-paper) inset;
+}
+
+::selection {
+  background: var(--color-red-wash);
+  color: var(--color-ink);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-3);
+  border: 3px solid var(--color-paper-2);
+  border-radius: 0;
+}

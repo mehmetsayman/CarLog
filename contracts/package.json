@@ -1,0 +1,28 @@
+{
+  "name": "carlog-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts --network monadTestnet",
+    "seed": "hardhat run scripts/seed.ts --network monadTestnet",
+    "approve": "hardhat run scripts/approve.ts --network monadTestnet",
+    "status": "hardhat run scripts/status.ts --network monadTestnet",
+    "buy": "hardhat run scripts/buy.ts --network monadTestnet",
+    "keys": "hardhat run scripts/keys.ts --network monadTestnet",
+    "roles": "hardhat run scripts/roles.ts --network monadTestnet",
+    "newcar": "hardhat run scripts/newcar.ts --network monadTestnet",
+    "usta-everywhere": "hardhat run scripts/usta-everywhere.ts --network monadTestnet"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.7",
+    "@openzeppelin/contracts": "^5.6.1",
+    "@types/node": "^26.6.2",
+    "dotenv": "^18.0.2",
+    "hardhat": "^3.17.0",
+    "typescript": "^7.0.2",
+    "viem": "^2.56.8"
+  }
+}
